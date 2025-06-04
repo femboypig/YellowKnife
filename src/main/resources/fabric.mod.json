@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "yellowknife",
+  "version": "${version}",
+  "name": "YellowKnife",
+  "description": "In-game offline account switcher for Minecraft",
+  "authors": [
+    "femboypig"
+  ],
+  "contact": {
+    "homepage": "https://github.com/femboypig/YellowKnife",
+    "issues": "https://github.com/femboypig/YellowKnife/issues",
+    "sources": "https://github.com/femboypig/YellowKnife"
+  },
+  "license": "MIT",
+  "icon": "assets/yellowknife/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.femboypig.yellowknife.client.YellowknifeClient"
+    ],
+    "main": [
+      "net.femboypig.yellowknife.Yellowknife"
+    ]
+  },
+  "mixins": [
+    "yellowknife.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
