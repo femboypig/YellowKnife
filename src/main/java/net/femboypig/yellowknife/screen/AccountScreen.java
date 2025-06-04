@@ -3,12 +3,13 @@ package net.femboypig.yellowknife.screen;
 import net.femboypig.yellowknife.client.YellowknifeClient;
 import net.femboypig.yellowknife.util.AccountManager;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.screen.ScreenTexts;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 
 import java.util.List;
@@ -45,14 +46,8 @@ public class AccountScreen extends Screen {
     private static final int COLOR_TEXT_DARK = 0xFF999999;
 
     public AccountScreen(Screen parent) {
-        super(Text.literal(""));
+        super(new LiteralText(""));
         this.parent = parent;
-    }
-
-    @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Переопределяем метод, чтобы не рендерить размытие и нечеткости
-        // Не вызываем super.renderBackground()
     }
 
     @Override
@@ -85,58 +80,77 @@ public class AccountScreen extends Screen {
                 panelBottom - 50,
                 inputWidth,
                 20,
-                Text.translatable("yellowknife.account.username")
+                new TranslatableText("yellowknife.account.username")
         );
         usernameField.setMaxLength(16);
-        usernameField.setPlaceholder(Text.translatable("yellowknife.account.username_placeholder"));
-        addDrawableChild(usernameField);
+        this.children.add(usernameField);
 
         // Add button
-        addButton = ButtonWidget.builder(Text.translatable("yellowknife.account.add"), button -> {
-            String username = usernameField.getText().trim();
-            if (!username.isEmpty()) {
-                AccountManager.getInstance().addAccount(username);
-                usernameField.setText("");
-                refreshAccounts();
-                showStatusMessage(Text.translatable("yellowknife.account.added", username), 1);
-            }
-        })
-        .dimensions(panelRight - 120, panelBottom - 50, 110, 20)
-        .build();
-        addDrawableChild(addButton);
-
-        // Buttons for account operations
-        switchButton = ButtonWidget.builder(Text.translatable("yellowknife.account.switch"), button -> {
-            AccountManager.Account selected = accountList.getSelectedAccount();
-            if (selected != null) {
-                if (AccountManager.getInstance().switchToAccount(selected)) {
-                    showStatusMessage(Text.translatable("yellowknife.account.switched", selected.getUsername()), 1);
+        addButton = new ButtonWidget(
+            panelRight - 120, 
+            panelBottom - 50, 
+            110, 
+            20,
+            new TranslatableText("yellowknife.account.add"), 
+            button -> {
+                String username = usernameField.getText().trim();
+                if (!username.isEmpty()) {
+                    AccountManager.getInstance().addAccount(username);
+                    usernameField.setText("");
+                    refreshAccounts();
+                    showStatusMessage(new TranslatableText("yellowknife.account.added", username), 1);
                 }
             }
-        })
-        .dimensions(panelLeft + 10, panelBottom - 25, switchWidth, BUTTON_HEIGHT)
-        .build();
-        addDrawableChild(switchButton);
+        );
+        this.addButton(addButton);
+
+        // Buttons for account operations
+        switchButton = new ButtonWidget(
+            panelLeft + 10, 
+            panelBottom - 25, 
+            switchWidth, 
+            BUTTON_HEIGHT,
+            new TranslatableText("yellowknife.account.switch"), 
+            button -> {
+                AccountManager.Account selected = accountList.getSelectedAccount();
+                if (selected != null) {
+                    if (AccountManager.getInstance().switchToAccount(selected)) {
+                        showStatusMessage(new TranslatableText("yellowknife.account.switched", selected.getUsername()), 1);
+                    }
+                }
+            }
+        );
+        this.addButton(switchButton);
 
         // Расширяем ширину кнопки Delete по формуле: ширина поля ввода - ширина Switch Account
         int deleteWidth = inputWidth - switchWidth;
-        deleteButton = ButtonWidget.builder(Text.translatable("yellowknife.account.delete"), button -> {
-            AccountManager.Account selected = accountList.getSelectedAccount();
-            if (selected != null) {
-                AccountManager.getInstance().removeAccount(selected);
-                refreshAccounts();
-                showStatusMessage(Text.translatable("yellowknife.account.deleted", selected.getUsername()), 2);
+        deleteButton = new ButtonWidget(
+            panelLeft + 10 + switchWidth + 5, 
+            panelBottom - 25, 
+            deleteWidth - 5, 
+            BUTTON_HEIGHT,
+            new TranslatableText("yellowknife.account.delete"), 
+            button -> {
+                AccountManager.Account selected = accountList.getSelectedAccount();
+                if (selected != null) {
+                    AccountManager.getInstance().removeAccount(selected);
+                    refreshAccounts();
+                    showStatusMessage(new TranslatableText("yellowknife.account.deleted", selected.getUsername()), 2);
+                }
             }
-        })
-        .dimensions(panelLeft + 10 + switchWidth + 5, panelBottom - 25, deleteWidth - 5, BUTTON_HEIGHT)
-        .build();
-        addDrawableChild(deleteButton);
+        );
+        this.addButton(deleteButton);
 
         // Done button
-        doneButton = ButtonWidget.builder(ScreenTexts.DONE, button -> close())
-                .dimensions(panelRight - 120, panelBottom - 25, 110, BUTTON_HEIGHT)
-                .build();
-        addDrawableChild(doneButton);
+        doneButton = new ButtonWidget(
+            panelRight - 120, 
+            panelBottom - 25, 
+            110, 
+            BUTTON_HEIGHT,
+            new TranslatableText("gui.done"), 
+            button -> close()
+        );
+        this.addButton(doneButton);
 
         refreshAccounts();
     }
@@ -169,22 +183,16 @@ public class AccountScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        // Отладочный вывод
-        System.out.println("Scroll event detected: " + verticalAmount);
-        
-        // Проверяем, что список не пустой
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (accountList != null) {
-            // Прокручиваем список, предавая только вертикальную составляющую прокрутки
-            return accountList.mouseScrolled(mouseX, mouseY, verticalAmount);
+            return accountList.mouseScrolled(mouseX, mouseY, amount);
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Рендерим ЧИСТО черный фон вместо размытого
-        context.fill(0, 0, this.width, this.height, 0xFF000000);
+    public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
+        this.fillGradient(matrices, 0, 0, this.width, this.height, 0xFF000000, 0xFF000000);
         
         int centerX = width / 2;
         int centerY = height / 2;
@@ -195,39 +203,52 @@ public class AccountScreen extends Screen {
         int panelBottom = centerY + MAIN_PANEL_HEIGHT / 2;
         
         // Draw panel
-        context.fill(panelLeft, panelTop, panelRight, panelBottom, COLOR_PANEL);
+        fill(matrices, panelLeft, panelTop, panelRight, panelBottom, COLOR_PANEL);
         
         // Draw header
-        context.fill(panelLeft, panelTop, panelRight, panelTop + HEADER_HEIGHT, COLOR_PANEL_DARK);
-        context.fill(panelLeft, panelTop + HEADER_HEIGHT - 1, panelRight, panelTop + HEADER_HEIGHT, COLOR_ACCENT);
+        fill(matrices, panelLeft, panelTop, panelRight, panelTop + HEADER_HEIGHT, COLOR_PANEL_DARK);
+        fill(matrices, panelLeft, panelTop + HEADER_HEIGHT - 1, panelRight, panelTop + HEADER_HEIGHT, COLOR_ACCENT);
         
         // Дополнительно рисуем разделитель над нижней панелью, чтобы визуально отделить список
         int separatorY = panelBottom - BOTTOM_PANEL_HEIGHT;
-        context.fill(panelLeft, separatorY, panelRight, separatorY + 1, COLOR_ACCENT_DARK);
+        fill(matrices, panelLeft, separatorY, panelRight, separatorY + 1, COLOR_ACCENT_DARK);
         
         // Title с форматированием Current Account: имя_аккаунта
         String currentUsername = MinecraftClient.getInstance().getSession().getUsername();
-        Text titlePrefix = Text.literal("Current Account: ").formatted(Formatting.WHITE);
-        Text userName = Text.literal(currentUsername).formatted(Formatting.GREEN);
+        LiteralText titlePrefix = new LiteralText("Current Account: ");
+        titlePrefix.formatted(Formatting.WHITE);
+        
+        LiteralText userName = new LiteralText(currentUsername);
+        userName.formatted(Formatting.GREEN);
+        
         Text titleText = titlePrefix.copy().append(userName);
         
-        context.drawCenteredTextWithShadow(textRenderer, titleText, centerX, panelTop + 10, 0xFFFFFF);
+        drawCenteredText(matrices, textRenderer, titleText, centerX, panelTop + 10, 0xFFFFFF);
         
-        // Используем scissor для обрезки списка, чтобы он не выходил за границы
-        context.enableScissor(
-            panelLeft + 10, 
-            panelTop + HEADER_HEIGHT + 5,
-            panelRight - 10,
-            panelBottom - BOTTOM_PANEL_HEIGHT
-        );
+        // In 1.16.5, we need to manually set up scissor
+        double scale = this.client.getWindow().getScaleFactor();
+        int scissorX = (int) (scale * (panelLeft + 10));
+        int scissorY = (int) (scale * (panelTop + HEADER_HEIGHT + 5));
+        int scissorWidth = (int) (scale * (MAIN_PANEL_WIDTH - 20));
+        int scissorHeight = (int) (scale * (MAIN_PANEL_HEIGHT - HEADER_HEIGHT - BOTTOM_MARGIN));
+        
+        // Use GL to set up scissor
+        net.minecraft.client.util.Window window = this.client.getWindow();
+        int frameHeight = window.getFramebufferHeight();
+        org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
+        org.lwjgl.opengl.GL11.glScissor(scissorX, frameHeight - scissorY - scissorHeight, scissorWidth, scissorHeight);
         
         // Render account list
-        accountList.render(context, mouseX, mouseY, delta);
+        accountList.render(matrices, mouseX, mouseY, delta);
         
-        context.disableScissor();
+        // Disable scissor
+        org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
         
-        // Render UI widgets
-        super.render(context, mouseX, mouseY, delta);
+        // Render text field
+        usernameField.render(matrices, mouseX, mouseY, delta);
+        
+        // Render the rest of UI widgets (buttons)
+        super.render(matrices, mouseX, mouseY, delta);
         
         // Render status message at the bottom of the panel
         if (statusMessage != null && System.currentTimeMillis() - statusMessageTime < 3000) {
@@ -245,42 +266,29 @@ public class AccountScreen extends Screen {
             }
             
             // Рисуем фон для уведомления
-            int messageWidth = textRenderer.getWidth(formattedMessage);
+            int messageWidth = textRenderer.getWidth(formattedMessage.getString());
             int messageX = centerX - messageWidth / 2 - 5;
             int messageY = panelBottom - 78;
-            int messageHeight = 16;
+            fill(matrices, messageX, messageY, messageX + messageWidth + 10, messageY + 16, 0x80000000);
+            fill(matrices, messageX, messageY, messageX + 2, messageY + 16, 
+                statusMessageType == 2 ? 0xFFFF0000 : (statusMessageType == 1 ? 0xFF00FF00 : 0xFF444444));
             
-            // Полупрозрачный фон под уведомлением
-            context.fill(messageX, messageY, messageX + messageWidth + 10, messageY + messageHeight, 0x80000000);
-            
-            // Рисуем сообщение
-            context.drawCenteredTextWithShadow(textRenderer, formattedMessage, centerX, messageY + 4, 0xFFFFFF);
-        } else {
-            statusMessage = null;
-        }
-        
-        // Явный рендеринг скролл-индикаторов, если они нужны
-        if (accountList != null) {
-            accountList.renderScrollIndicators(context);
+            // Рисуем текст уведомления
+            drawStringWithShadow(matrices, textRenderer, formattedMessage.getString(), messageX + 5, messageY + 4, 0xFFFFFF);
         }
     }
 
-    @Override
     public void close() {
-        MinecraftClient.getInstance().setScreen(parent);
+        this.client.openScreen(this.parent);
     }
 
-    /**
-     * Простой вертикальный список аккаунтов
-     */
     private class AccountList {
         private final MinecraftClient client;
         private final int x, y, width, height;
         private List<AccountManager.Account> accounts;
         private int selectedIndex = -1;
         private int scrollOffset = 0;
-        
-        // Добавляем переменную для отслеживания элемента под мышью
+        private int maxScrollOffset = 0;
         private int hoveredIndex = -1;
         
         private static final int ENTRY_HEIGHT = 28; // Ещё меньшая высота для элементов списка
@@ -296,21 +304,16 @@ public class AccountScreen extends Screen {
         
         public void setAccounts(List<AccountManager.Account> accounts) {
             this.accounts = accounts;
-            
-            // Reset selection if needed
             if (accounts.isEmpty()) {
                 selectedIndex = -1;
-            } else if (selectedIndex >= accounts.size()) {
-                selectedIndex = accounts.size() - 1;
-            } else if (selectedIndex == -1 && !accounts.isEmpty()) {
-                selectedIndex = 0;
-            }
-            
-            // Reset scroll if needed
-            if (selectedIndex >= 0) {
-                ensureSelectedVisible();
             } else {
-                scrollOffset = 0;
+                maxScrollOffset = Math.max(0, accounts.size() * ENTRY_HEIGHT - height);
+                
+                if (selectedIndex >= accounts.size() || selectedIndex < 0) {
+                    selectedIndex = accounts.isEmpty() ? -1 : 0;
+                }
+                
+                ensureSelectedVisible();
             }
         }
         
@@ -322,35 +325,31 @@ public class AccountScreen extends Screen {
         }
         
         private void ensureSelectedVisible() {
-            if (selectedIndex < scrollOffset) {
-                scrollOffset = selectedIndex;
-            } else if (selectedIndex >= scrollOffset + MAX_ENTRIES_VISIBLE) {
-                scrollOffset = selectedIndex - MAX_ENTRIES_VISIBLE + 1;
-            }
-            
-            // Исправляем расчет максимального смещения прокрутки
-            // Используем более строгий расчет, чтобы последний элемент был виден полностью
-            int maxScrollOffset = Math.max(0, accounts.size() - MAX_ENTRIES_VISIBLE);
-            
-            // Применяем отступ, если мы находимся у последнего элемента
-            if (selectedIndex == accounts.size() - 1) {
-                maxScrollOffset += 1; // Добавляем отступ для последнего элемента
-            }
-            
-            scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
-            if (accounts.size() <= MAX_ENTRIES_VISIBLE) {
-                scrollOffset = 0;
+            if (selectedIndex >= 0) {
+                int selectedTop = selectedIndex * ENTRY_HEIGHT;
+                int selectedBottom = selectedTop + ENTRY_HEIGHT;
+                
+                if (selectedTop < scrollOffset) {
+                    scrollOffset = selectedTop;
+                }
+                
+                else if (selectedBottom > scrollOffset + height) {
+                    scrollOffset = selectedBottom - height;
+                }
+                
+                scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
             }
         }
         
-        public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
             if (accounts == null || accounts.isEmpty()) {
                 // Улучшенное отображение "Нет аккаунтов"
                 int centerX = x + width / 2;
                 int centerY = y + height / 2;
                 
                 // Рисуем фоновую панель с градиентом
-                context.fillGradient(
+                fillGradient(
+                    matrices,
                     x + 10, 
                     centerY - 20, 
                     x + width - 10, 
@@ -360,86 +359,83 @@ public class AccountScreen extends Screen {
                 );
                 
                 // Акцентная рамка вокруг панели
-                context.fill(x + 10, centerY - 20, x + width - 10, centerY - 19, COLOR_ACCENT_DARK);
-                context.fill(x + 10, centerY + 19, x + width - 10, centerY + 20, COLOR_ACCENT_DARK);
-                context.fill(x + 10, centerY - 20, x + 11, centerY + 20, COLOR_ACCENT_DARK);
-                context.fill(x + width - 11, centerY - 20, x + width - 10, centerY + 20, COLOR_ACCENT_DARK);
+                fill(matrices, x + 10, centerY - 20, x + width - 10, centerY - 19, COLOR_ACCENT_DARK);
+                fill(matrices, x + 10, centerY + 19, x + width - 10, centerY + 20, COLOR_ACCENT_DARK);
+                fill(matrices, x + 10, centerY - 20, x + 11, centerY + 20, COLOR_ACCENT_DARK);
+                fill(matrices, x + width - 11, centerY - 20, x + width - 10, centerY + 20, COLOR_ACCENT_DARK);
                 
                 // Текст "Нет аккаунтов" с тенью и стильным форматированием
-                Text noAccountsText = Text.translatable("yellowknife.account.no_accounts").formatted(Formatting.BOLD);
-                context.drawCenteredTextWithShadow(textRenderer, noAccountsText, centerX, centerY - 10, COLOR_ACCENT);
+                TranslatableText noAccountsText = new TranslatableText("yellowknife.account.no_accounts");
+                noAccountsText.formatted(Formatting.BOLD);
+                drawCenteredText(matrices, textRenderer, noAccountsText, centerX, centerY - 10, COLOR_ACCENT);
                 
                 // Подсказка как добавить аккаунт
-                Text helpText = Text.translatable("yellowknife.account.add_hint").formatted(Formatting.GRAY);
-                context.drawCenteredTextWithShadow(textRenderer, helpText, centerX, centerY + 5, COLOR_TEXT_DARK);
+                TranslatableText helpText = new TranslatableText("yellowknife.account.add_hint");
+                helpText.formatted(Formatting.GRAY);
+                drawCenteredText(matrices, textRenderer, helpText, centerX, centerY + 5, COLOR_TEXT_DARK);
                 return;
             }
             
             // Определяем, находится ли мышь над каким-либо элементом
             hoveredIndex = -1;
-            if (mouseX >= x && mouseX < x + width - 10) {
-                for (int i = 0; i < Math.min(MAX_ENTRIES_VISIBLE, accounts.size() - scrollOffset); i++) {
-                    int entryY = y + i * ENTRY_HEIGHT;
-                    if (mouseY >= entryY && mouseY < entryY + ENTRY_HEIGHT) {
-                        hoveredIndex = i + scrollOffset;
-                        break;
+            if (mouseX >= x && mouseX < x + width) {
+                for (int i = 0; i < accounts.size(); i++) {
+                    int entryY = y + i * ENTRY_HEIGHT - scrollOffset;
+                    if (entryY + ENTRY_HEIGHT > y && entryY < y + height) { // Only check if entry is visible
+                        if (mouseY >= entryY && mouseY < entryY + ENTRY_HEIGHT) {
+                            hoveredIndex = i;
+                            break;
+                        }
                     }
                 }
             }
             
-            // Draw accounts
-            int startIndex = scrollOffset;
-            int endIndex = Math.min(accounts.size(), startIndex + MAX_ENTRIES_VISIBLE);
+            // Нужен ли скроллбар
+            boolean needsScrolling = accounts.size() * ENTRY_HEIGHT > height;
             
-            for (int i = startIndex; i < endIndex; i++) {
+            // Render account entries
+            for (int i = 0; i < accounts.size(); i++) {
+                int entryY = y + i * ENTRY_HEIGHT - scrollOffset;
+                
+                // Skip rendering if entry is completely outside visible area
+                if (entryY + ENTRY_HEIGHT <= y || entryY >= y + height) continue;
+                
                 AccountManager.Account account = accounts.get(i);
                 boolean isSelected = i == selectedIndex;
                 boolean isHovered = i == hoveredIndex;
                 
-                renderAccountEntry(context, account, x, y + (i - startIndex) * ENTRY_HEIGHT, width, ENTRY_HEIGHT, isSelected, isHovered);
-            }
-        }
-        
-        // Метод для явного рендеринга скролл-индикаторов
-        public void renderScrollIndicators(DrawContext context) {
-            if (accounts == null || accounts.size() <= MAX_ENTRIES_VISIBLE) {
-                return;
+                renderAccountEntry(matrices, account, x, entryY, width, ENTRY_HEIGHT, isSelected, isHovered, needsScrolling);
             }
             
-            // Полоса прокрутки (улучшенный вид)
-            if (accounts.size() > 0) {
-                int scrollBarHeight = Math.max(30, height * MAX_ENTRIES_VISIBLE / accounts.size());
-                
-                // Используем те же расчеты максимального скролла, что и везде
-                // Учитываем дополнительный отступ, который используется в mouseScrolled
-                int maxScrollOffset = Math.max(0, accounts.size() - MAX_ENTRIES_VISIBLE);
-                if (scrollOffset >= maxScrollOffset) {
-                    maxScrollOffset += 1; // Добавляем такой же отступ как в mouseScrolled
-                }
-                
-                // Вычисляем позицию скроллбара с учетом максимального значения
-                int scrollBarY = y;
-                if (maxScrollOffset > 0) {
-                    scrollBarY = y + (height - scrollBarHeight) * scrollOffset / maxScrollOffset;
-                }
-                
-                // Фон полосы с розовым оттенком
-                context.fill(x + width - 6, y, x + width, y + height, 0x20FF69B4);
-                // Сама полоса с розовым оттенком (более широкая и заметная)
-                context.fill(x + width - 6, scrollBarY, x + width, scrollBarY + scrollBarHeight, 0xAAFF69B4);
-                
-                // Добавляем небольшой блик на скроллбаре
-                context.fill(x + width - 6, scrollBarY, x + width - 4, scrollBarY + scrollBarHeight, 0xFFFF8CC5);
+            // Render scroll indicators if needed
+            if (needsScrolling) {
+                renderScrollIndicators(matrices);
             }
         }
         
-        private void renderAccountEntry(DrawContext context, AccountManager.Account account, int x, int y, int width, int height, boolean isSelected, boolean isHovered) {
+        public void renderScrollIndicators(MatrixStack matrices) {
+            // Полоса прокрутки (улучшенный вид)
+            int scrollBarHeight = Math.max(30, height * height / (accounts.size() * ENTRY_HEIGHT));
+            
+            // Вычисляем позицию скроллбара с учетом максимального значения
+            float scrollPercentage = (float) scrollOffset / maxScrollOffset;
+            int scrollBarY = y + (int) ((height - scrollBarHeight) * scrollPercentage);
+            
+            // Фон полосы с розовым оттенком
+            fill(matrices, x + width - 6, y, x + width, y + height, 0x20FF69B4);
+            // Сама полоса с розовым оттенком (более широкая и заметная)
+            fill(matrices, x + width - 6, scrollBarY, x + width, scrollBarY + scrollBarHeight, 0xAAFF69B4);
+            
+            // Добавляем небольшой блик на скроллбаре
+            fill(matrices, x + width - 6, scrollBarY, x + width - 4, scrollBarY + scrollBarHeight, 0xFFFF8CC5);
+        }
+        
+        private void renderAccountEntry(MatrixStack matrices, AccountManager.Account account, int x, int y, int width, int height, 
+                                      boolean isSelected, boolean isHovered, boolean needsScrolling) {
             // Добавляем отступы между элементами
             int verticalPadding = 2;
             int horizontalPadding = 10;
             
-            // Проверяем, нужен ли скроллбар
-            boolean needsScrolling = accounts.size() > MAX_ENTRIES_VISIBLE;
             // Отступ для скроллбара применяем только если он нужен
             int rightPadding = needsScrolling ? 10 : 0;
             int adjustedWidth = width - rightPadding;
@@ -451,7 +447,8 @@ public class AccountScreen extends Screen {
             // Background с градиентом и отступами для визуального разделения элементов (стиль карточки)
             if (isSelected) {
                 // Градиентный фон для выделенного элемента (от более яркого к более темному)
-                context.fillGradient(
+                fillGradient(
+                    matrices,
                     x + horizontalPadding, 
                     y + verticalPadding, 
                     x + adjustedWidth - horizontalPadding, 
@@ -461,7 +458,8 @@ public class AccountScreen extends Screen {
                 );
             } else if (isHovered) {
                 // Эффект при наведении - более светлый фон с легким градиентом
-                context.fillGradient(
+                fillGradient(
+                    matrices,
                     x + horizontalPadding, 
                     y + verticalPadding, 
                     x + adjustedWidth - horizontalPadding, 
@@ -471,7 +469,8 @@ public class AccountScreen extends Screen {
                 );
             } else {
                 // Обычный фон с небольшой прозрачностью и эффектом градиента
-                context.fillGradient(
+                fillGradient(
+                    matrices,
                     x + horizontalPadding, 
                     y + verticalPadding, 
                     x + adjustedWidth - horizontalPadding, 
@@ -484,17 +483,17 @@ public class AccountScreen extends Screen {
             // Рамка вокруг элемента
             if (isSelected) {
                 // Добавляем рамку вокруг выделенного элемента
-                context.fill(x + horizontalPadding, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + verticalPadding + 1, COLOR_ACCENT); // Верхняя
-                context.fill(x + horizontalPadding, y + height - verticalPadding - 1, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, COLOR_ACCENT); // Нижняя
-                context.fill(x + horizontalPadding, y + verticalPadding, x + horizontalPadding + 1, y + height - verticalPadding, COLOR_ACCENT); // Левая
-                context.fill(x + adjustedWidth - horizontalPadding - 1, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, COLOR_ACCENT); // Правая
+                fill(matrices, x + horizontalPadding, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + verticalPadding + 1, COLOR_ACCENT); // Верхняя
+                fill(matrices, x + horizontalPadding, y + height - verticalPadding - 1, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, COLOR_ACCENT); // Нижняя
+                fill(matrices, x + horizontalPadding, y + verticalPadding, x + horizontalPadding + 1, y + height - verticalPadding, COLOR_ACCENT); // Левая
+                fill(matrices, x + adjustedWidth - horizontalPadding - 1, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, COLOR_ACCENT); // Правая
             } else if (isHovered) {
                 // Добавляем тонкую рамку при наведении
                 int hoverBorderColor = 0x60FF69B4; // Полупрозрачный розовый
-                context.fill(x + horizontalPadding, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + verticalPadding + 1, hoverBorderColor); // Верхняя
-                context.fill(x + horizontalPadding, y + height - verticalPadding - 1, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, hoverBorderColor); // Нижняя
-                context.fill(x + horizontalPadding, y + verticalPadding, x + horizontalPadding + 1, y + height - verticalPadding, hoverBorderColor); // Левая
-                context.fill(x + adjustedWidth - horizontalPadding - 1, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, hoverBorderColor); // Правая
+                fill(matrices, x + horizontalPadding, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + verticalPadding + 1, hoverBorderColor); // Верхняя
+                fill(matrices, x + horizontalPadding, y + height - verticalPadding - 1, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, hoverBorderColor); // Нижняя
+                fill(matrices, x + horizontalPadding, y + verticalPadding, x + horizontalPadding + 1, y + height - verticalPadding, hoverBorderColor); // Левая
+                fill(matrices, x + adjustedWidth - horizontalPadding - 1, y + verticalPadding, x + adjustedWidth - horizontalPadding, y + height - verticalPadding, hoverBorderColor); // Правая
             }
             
             // Account name - центрируем по вертикали
@@ -515,17 +514,18 @@ public class AccountScreen extends Screen {
             }
             
             // Рисуем имя аккаунта с соответствующим цветом
-            context.drawTextWithShadow(textRenderer, username, textX, nameY, textColor);
+            drawStringWithShadow(matrices, textRenderer, username, textX, nameY, textColor);
             
-            // Информация о дате добавления
-            String addedInfo = Text.translatable("yellowknife.account.added_date", getFormattedDate(account, true)).getString();
+            // Информация о дате добавления - используем перевод "Added" как в оригинале
+            String addedInfo = new TranslatableText("yellowknife.account.added_date", getFormattedDate(account)).getString();
             int dateWidth = textRenderer.getWidth(addedInfo);
             
             // Определяем положение для текста "In use"
             if (isCurrentAccount) {
-                Text inUseText = Text.translatable("yellowknife.account.in_use").formatted(Formatting.GREEN);
+                TranslatableText inUseText = new TranslatableText("yellowknife.account.in_use");
+                inUseText.formatted(Formatting.GREEN);
                 int usernameWidth = textRenderer.getWidth(username);
-                int inUseWidth = textRenderer.getWidth(inUseText);
+                int inUseWidth = textRenderer.getWidth(inUseText.getString());
                 int padding = 5; // Отступ между текстами
                 
                 // Вычисляем доступное пространство
@@ -535,17 +535,19 @@ public class AccountScreen extends Screen {
                 int inUseX = textX + usernameWidth + padding;
                 
                 // Рисуем "In use"
-                context.drawTextWithShadow(
+                drawStringWithShadow(
+                    matrices,
                     textRenderer,
-                    inUseText,
+                    inUseText.getString(),
                     inUseX,
                     nameY,
-                    0xFFFFFFFF // Белый цвет (форматирование GREEN уже применено)
+                    0xFF00FF00 // Зеленый цвет
                 );
             }
             
             // Рисуем информацию о дате добавления всегда справа (с центрированием по Y)
-            context.drawTextWithShadow(
+            drawStringWithShadow(
+                matrices, 
                 textRenderer, 
                 addedInfo, 
                 x + adjustedWidth - horizontalPadding - dateWidth - 5,
@@ -554,21 +556,15 @@ public class AccountScreen extends Screen {
             );
         }
         
-        // Метод для получения форматированной даты добавления или последнего входа аккаунта
-        private String getFormattedDate(AccountManager.Account account, boolean isCreationDate) {
+        // Метод для получения форматированной даты добавления
+        private String getFormattedDate(AccountManager.Account account) {
             if (account == null) {
                 return "unknown";
             }
             
             try {
-                // Используем реальные даты из объекта аккаунта
-                if (isCreationDate) {
-                    // Дата создания аккаунта
-                    return account.getFormattedCreationDate();
-                } else {
-                    // Дата последнего входа
-                    return account.getFormattedLastLoginDate();
-                }
+                // Используем реальную дату из объекта аккаунта
+                return account.getFormattedCreationDate();
             } catch (Exception e) {
                 // Если возникла ошибка при получении даты, используем запасной вариант
                 long hash = Math.abs(account.getUsername().hashCode());
@@ -586,29 +582,37 @@ public class AccountScreen extends Screen {
             }
             
             // Клик на полосе прокрутки
-            if (accounts.size() > MAX_ENTRIES_VISIBLE) {
+            if (accounts.size() * ENTRY_HEIGHT > height) {
                 if (mouseX >= x + width - 6 && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
                     int clickPosition = (int)(mouseY - y);
-                    // Обновляем логику расчета максимального scrollOffset
-                    int maxScrollOffset = Math.max(0, accounts.size() - MAX_ENTRIES_VISIBLE);
-                    
-                    // Используем тот же подход с дополнительным отступом для последнего элемента
-                    int lastPosition = height - 1; // Позиция клика для последнего элемента
-                    if (clickPosition >= lastPosition * 0.95) { // Если клик близко к концу скроллбара
-                        maxScrollOffset += 1; // Добавляем дополнительный отступ
-                    }
-                    
-                    scrollOffset = clickPosition * maxScrollOffset / height;
+                    scrollOffset = (int)(clickPosition * maxScrollOffset / height);
                     scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
                     return true;
                 }
             }
             
+            // Клик на элементе списка
             if (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height) {
-                int entryIndex = (int)((mouseY - y) / ENTRY_HEIGHT) + scrollOffset;
+                int relativeY = (int) (mouseY - y + scrollOffset);
+                int clickedIndex = relativeY / ENTRY_HEIGHT;
                 
-                if (entryIndex >= 0 && entryIndex < accounts.size()) {
-                    selectedIndex = entryIndex;
+                if (clickedIndex >= 0 && clickedIndex < accounts.size()) {
+                    // Двойной клик для переключения на аккаунт
+                    if (clickedIndex == selectedIndex) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastClickTime < 500 && lastClickedIndex == clickedIndex) {
+                            // Двойной клик обнаружен - переключаемся на этот аккаунт
+                            AccountManager.Account account = accounts.get(clickedIndex);
+                            AccountManager.getInstance().switchToAccount(account);
+                            lastClickTime = 0; // Сбрасываем время клика
+                            return true;
+                        }
+                    }
+                    
+                    // Обычный клик - выбираем аккаунт
+                    selectedIndex = clickedIndex;
+                    lastClickedIndex = clickedIndex;
+                    lastClickTime = System.currentTimeMillis();
                     ensureSelectedVisible();
                     return true;
                 }
@@ -617,46 +621,20 @@ public class AccountScreen extends Screen {
             return false;
         }
         
+        private int lastClickedIndex = -1;
+        private long lastClickTime = 0;
+        
         public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-            // Отладочный вывод
-            System.out.println("AccountList scroll: " + amount + ", accounts: " + (accounts != null ? accounts.size() : "null"));
-            
-            if (accounts == null || accounts.isEmpty()) {
-                return false;
-            }
-            
-            // Проверяем наличие скролла только если элементов больше чем может поместиться
-            boolean needsScrolling = accounts.size() > MAX_ENTRIES_VISIBLE;
-            System.out.println("Needs scrolling: " + needsScrolling);
-            
-            if (!needsScrolling) {
+            if (accounts == null || accounts.isEmpty() || maxScrollOffset <= 0) {
                 return false;
             }
             
             // Корректируем скорость прокрутки
-            double scrollSpeed = 1.0; // Уменьшаем скорость прокрутки для более плавного движения
-            int newScrollOffset = scrollOffset - (int)(amount * scrollSpeed);
+            double scrollSpeed = 20.0; // Увеличиваем скорость прокрутки
+            int scrollAmount = (int) (-amount * scrollSpeed);
+            scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset + scrollAmount));
             
-            // Проверяем, что новое значение прокрутки валидно
-            // Добавляем нижний отступ в 1 элемент для полной видимости последнего элемента
-            int maxScrollOffset = Math.max(0, accounts.size() - MAX_ENTRIES_VISIBLE);
-            
-            // Если мы находимся в самом низу списка, добавляем небольшой дополнительный отступ
-            // чтобы последний элемент был полностью виден
-            if (newScrollOffset >= maxScrollOffset) {
-                // Добавляем небольшой буфер для последнего элемента
-                maxScrollOffset += 1; // Добавляем дополнительную единицу для отступа
-            }
-            
-            newScrollOffset = Math.max(0, Math.min(maxScrollOffset, newScrollOffset));
-            
-            // Применяем новое значение прокрутки
-            if (newScrollOffset != scrollOffset) {
-                scrollOffset = newScrollOffset;
-                return true;
-            }
-            
-            return false;
+            return true;
         }
     }
 } 

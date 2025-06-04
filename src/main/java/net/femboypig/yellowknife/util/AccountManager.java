@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.femboypig.yellowknife.client.YellowknifeClient;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.session.Session;
+import net.minecraft.client.util.Session;
 
 import java.io.File;
 import java.io.FileReader;
@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.Optional;
 
 public class AccountManager {
     private static AccountManager instance;
@@ -90,44 +89,40 @@ public class AccountManager {
 
     public boolean switchToAccount(Account account) {
         try {
-            // For Minecraft 1.21.5, Session constructor parameters have changed
-            // Convert the UUID string to a proper UUID object
-            UUID accountUUID = UUID.fromString(
-                account.uuid.replaceFirst(
-                    "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", 
-                    "$1-$2-$3-$4-$5"
-                )
+            // For Minecraft 1.16.5, Session constructor parameters are different than 1.21.5
+            // Format the UUID correctly for the constructor
+            String formattedUuid = account.uuid.replaceFirst(
+                "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", 
+                "$1-$2-$3-$4-$5"
             );
             
+            // Create new session with 1.16.5 compatible parameters
             Session newSession = new Session(
-                account.username,  // username
-                accountUUID,       // uuid as UUID object
-                "",                // accessToken (empty for offline)
-                Optional.empty(),  // xboxUserId (empty for offline)
-                Optional.empty(),  // clientId (empty for offline)
-                Session.AccountType.MOJANG // account type
+                account.username,     // username
+                formattedUuid,        // uuid as String
+                "",                   // accessToken (empty for offline)
+                "mojang"              // legacy account type
             );
             
-            // В Minecraft 1.21.5, имя поля session могло измениться
-            // Поиск всех полей типа Session в классе MinecraftClient
-            boolean foundField = false;
+            // Find and set the session field in MinecraftClient
+            Field sessionField = null;
             for (Field field : MinecraftClient.class.getDeclaredFields()) {
                 if (field.getType() == Session.class) {
-                    YellowknifeClient.LOGGER.info("Found session field: " + field.getName());
-                    field.setAccessible(true);
-                    field.set(MinecraftClient.getInstance(), newSession);
-                    YellowknifeClient.LOGGER.info("Switched to account: " + account.username);
-                    foundField = true;
+                    sessionField = field;
                     break;
                 }
             }
             
-            if (!foundField) {
+            if (sessionField == null) {
                 YellowknifeClient.LOGGER.error("Could not find Session field in MinecraftClient");
                 return false;
             }
             
-            // Обновляем дату последнего входа
+            sessionField.setAccessible(true);
+            sessionField.set(MinecraftClient.getInstance(), newSession);
+            YellowknifeClient.LOGGER.info("Switched to account: " + account.username);
+            
+            // Update last login date
             account.lastLoginDate = new Date();
             saveAccounts();
             

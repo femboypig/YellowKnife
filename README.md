@@ -5,7 +5,7 @@
 
 ## About
 
-YellowKnife is an in-game offline account switcher for Minecraft, allowing you to quickly switch between accounts without restarting the game. This mod is designed for Fabric and works with Minecraft 1.21.x.
+YellowKnife is an in-game offline account switcher for Minecraft, allowing you to quickly switch between accounts without restarting the game. This mod is designed for Fabric and works with Minecraft 1.16.5.
 
 ## Features
 
