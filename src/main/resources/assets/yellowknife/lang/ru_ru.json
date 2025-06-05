@@ -8,6 +8,7 @@
   "yellowknife.account.delete": "Удалить",
   "yellowknife.account.refresh": "Обновить",
   "yellowknife.account.current": "Текущий аккаунт: %s",
+  "yellowknife.account.current_account": "Текущий аккаунт: ",
   "yellowknife.account.switched": "Успешно переключились на: %s",
   "yellowknife.account.added": "Добавлен аккаунт: %s",
   "yellowknife.account.deleted": "Удален аккаунт: %s",
@@ -15,5 +16,9 @@
   "yellowknife.account.no_accounts": "Аккаунты ещё не добавлены",
   "yellowknife.account.in_use": "Используется",
   "yellowknife.account.added_date": "Добавлен: %s",
-  "yellowknife.account.add_hint": "Введите имя пользователя ниже, чтобы добавить аккаунт"
+  "yellowknife.account.add_hint": "Введите имя пользователя ниже, чтобы добавить аккаунт",
+  "yellowknife.account.add_instruction": "Введите имя пользователя и нажмите 'Добавить'",
+  "yellowknife.screen.account_manager": "Менеджер аккаунтов",
+  "yellowknife.title.prefix": "YellowKnife ",
+  "yellowknife.title.suffix": "Менеджер аккаунтов"
 } 

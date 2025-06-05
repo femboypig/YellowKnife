@@ -71,7 +71,7 @@ public abstract class TitleScreenMixin extends Screen {
         String currentUsername = MinecraftClient.getInstance().getSession().getUsername();
         
         // In 1.16.5, we need to create the text differently
-        LiteralText prefix = new LiteralText("Current Account: ");
+        TranslatableText prefix = new TranslatableText("yellowknife.account.current_account");
         prefix.formatted(Formatting.WHITE);
         
         LiteralText username = new LiteralText(currentUsername);

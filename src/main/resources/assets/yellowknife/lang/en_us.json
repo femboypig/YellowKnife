@@ -8,6 +8,7 @@
   "yellowknife.account.delete": "Delete",
   "yellowknife.account.refresh": "Refresh",
   "yellowknife.account.current": "Current Account: %s",
+  "yellowknife.account.current_account": "Current Account: ",
   "yellowknife.account.switched": "Switched to account: %s",
   "yellowknife.account.added": "Added account: %s",
   "yellowknife.account.deleted": "Deleted account: %s",
@@ -15,5 +16,9 @@
   "yellowknife.account.no_accounts": "No accounts added yet",
   "yellowknife.account.in_use": "In use",
   "yellowknife.account.added_date": "Added: %s",
-  "yellowknife.account.add_hint": "Enter a username below to add an account"
+  "yellowknife.account.add_hint": "Enter a username below to add an account",
+  "yellowknife.account.add_instruction": "Enter a username below and click 'Add' to get started",
+  "yellowknife.screen.account_manager": "Account Manager",
+  "yellowknife.title.prefix": "YellowKnife ",
+  "yellowknife.title.suffix": "Account Manager"
 } 
