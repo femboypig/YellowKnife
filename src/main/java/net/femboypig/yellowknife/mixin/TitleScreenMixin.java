@@ -71,7 +71,7 @@ public abstract class TitleScreenMixin extends Screen {
     private void renderCurrentAccount(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         String currentUsername = MinecraftClient.getInstance().getSession().getUsername();
         
-        Text currentAccountText = Text.literal("Current Account: ").formatted(Formatting.WHITE)
+        Text currentAccountText = Text.translatable("yellowknife.account.current_account").formatted(Formatting.WHITE)
                                       .append(Text.literal(currentUsername).formatted(Formatting.GREEN))
                                       .append(Text.literal("").formatted(Formatting.WHITE));
         
